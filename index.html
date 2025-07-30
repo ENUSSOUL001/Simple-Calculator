@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+    <style>
+        :root {
+            --background-color: #2c2c2e;
+            --container-color: #3a3a3c;
+            --input-bg-color: #1c1c1e;
+            --button-color: #505053;
+            --button-active-color: #ff9500;
+            --text-color: #ffffff;
+            --placeholder-color: #6c6c70;
+            --border-color: #444446;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--background-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .calculator-container {
+            background-color: var(--container-color);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+            max-width: 320px;
+            box-sizing: border-box;
+        }
+
+        .inputs-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-box {
+            flex-grow: 1;
+            width: 40%;
+            background-color: var(--input-bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-size: 24px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .input-box::placeholder {
+            color: var(--placeholder-color);
+            opacity: 1;
+        }
+
+        .operators {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .operator-button, .equals-button {
+            background-color: var(--button-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 16px 0;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .operator-button.active {
+            background-color: var(--button-active-color);
+        }
+
+        .equals-button {
+            background-color: var(--button-active-color);
+        }
+
+        .result-box {
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+            font-size: 36px;
+            font-weight: bold;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: right;
+            min-height: 50px;
+            border: 1px solid var(--border-color);
+            word-wrap: break-word;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator-container">
+        <div class="inputs-wrapper">
+            <input type="number" id="num1" class="input-box" placeholder="0000">
+            <input type="number" id="num2" class="input-box" placeholder="0000">
+        </div>
+
+        <div class="operators">
+            <button class="operator-button active" data-op="+">+</button>
+            <button class="operator-button" data-op="-">-</button>
+            <button class="operator-button" data-op="*">×</button>
+            <button class="operator-button" data-op="/">÷</button>
+        </div>
+        
+        <button class="equals-button" id="equals">=</button>
+        
+        <div class="result-box" id="result">0</div>
+    </div>
+
+    <script>
+        const num1Input = document.getElementById('num1');
+        const num2Input = document.getElementById('num2');
+        const operatorButtons = document.querySelectorAll('.operator-button');
+        const equalsButton = document.getElementById('equals');
+        const resultBox = document.getElementById('result');
+
+        let currentOperator = '+';
+        let copyTimeout;
+
+        function limitInputDigits(inputElement) {
+            if (inputElement.value.length > 4) {
+                inputElement.value = inputElement.value.slice(0, 4);
+            }
+        }
+
+        num1Input.addEventListener('input', () => limitInputDigits(num1Input));
+        num2Input.addEventListener('input', () => limitInputDigits(num2Input));
+        
+        operatorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                operatorButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentOperator = button.dataset.op;
+            });
+        });
+
+        equalsButton.addEventListener('click', () => {
+            const num1 = parseFloat(num1Input.value);
+            const num2 = parseFloat(num2Input.value);
+            let result;
+
+            if (isNaN(num1) || isNaN(num2)) {
+                resultBox.textContent = 'Error';
+                return;
+            }
+
+            switch (currentOperator) {
+                case '+':
+                    result = num1 + num2;
+                    break;
+                case '-':
+                    result = num1 - num2;
+                    break;
+                case '*':
+                    result = num1 * num2;
+                    break;
+                case '/':
+                    if (num2 === 0) {
+                        resultBox.textContent = 'Infinity';
+                        return;
+                    }
+                    result = num1 / num2;
+                    break;
+                default:
+                    result = 'Error';
+            }
+            resultBox.textContent = parseFloat(result.toPrecision(10));
+        });
+
+        function handleCopy() {
+            const originalText = resultBox.textContent;
+            if (originalText === 'Copied!' || originalText === 'Error') return;
+
+            navigator.clipboard.writeText(originalText).then(() => {
+                resultBox.textContent = 'Copied!';
+                setTimeout(() => {
+                    resultBox.textContent = originalText;
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+        
+        resultBox.addEventListener('mousedown', startCopyTimer);
+        resultBox.addEventListener('mouseup', cancelCopyTimer);
+        resultBox.addEventListener('mouseleave', cancelCopyTimer);
+        
+        resultBox.addEventListener('touchstart', startCopyTimer, { passive: true });
+        resultBox.addEventListener('touchend', cancelCopyTimer);
+        resultBox.addEventListener('touchcancel', cancelCopyTimer);
+
+        function startCopyTimer(event) {
+            cancelCopyTimer();
+            copyTimeout = setTimeout(handleCopy, 1500);
+        }
+
+        function cancelCopyTimer() {
+            clearTimeout(copyTimeout);
+        }
+    </script>
+</body>
+</html>
