@@ -16,6 +16,8 @@ You can visit the calculator here!
 > [!WARNING]
 > This calculator is basic.
 
+New Update Soon!
+
 ## Planned Features
 
 * Increase Digits Limit
